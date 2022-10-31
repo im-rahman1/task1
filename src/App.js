@@ -22,7 +22,7 @@ function App() {
     applied_to: "",
     applicable_items: [],
   });
-  const [categoriesChecked, setCategoriesChecked] = useState();
+  const [checkedCategories, setCheckedCategories] = useState();
 
   const getItems = () => {
     const arrOfItems = [];
@@ -44,10 +44,28 @@ function App() {
     setItems(arrOfItems);
   };
 
-  const handleChange = (field, e) => {
+  const handleChangeCategory = (e) => {
+    let itemsOfSingleCategory = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].category === e.target.value) {
+        itemsOfSingleCategory.push(items[i]);
+      }
+    }
+
+    let itemsToAdd = [];
+    for (let i = 0; i < items.length; i++) {
+      if (!form.applicable_items.includes(itemsOfSingleCategory[i].id)) {
+        itemsToAdd.push(itemsOfSingleCategory[i].id.toString());
+      }
+    }
+    setForm({ ...form, applicable_items: [...itemsToAdd] });
+    console.log(itemsOfSingleCategory);
+  };
+
+  const handleChange = (field, item) => {
     if (field === "applicable_items") {
       const arr = [...form.applicable_items];
-      let value = e.target.value;
+      let value = item.id.toString();
       if (!arr.includes(value)) {
         arr.push(value);
         setForm({ ...form, applicable_items: arr });
@@ -56,15 +74,14 @@ function App() {
         arr.splice(index, 1);
         setForm({ ...form, applicable_items: arr });
       }
-    } else if (field === "category") {
-      console.log(e.target.value);
-      for (let i = 0; i < items.length; i++) {
-        let itemsOfSingleCategory = [];
-        if (items[i].category === e.target.value) {
-          itemsOfSingleCategory.push(items[i]);
-        }
-      }
     }
+
+    // if (form.applicable_items.length !== items.length) {
+    //   let arrOfItems = [];
+    //   for (let i = 0; i < items.length; i++) {
+    //     arrOfItems.push(items[i].id);
+    //   }
+    // }
   };
 
   const handleFilter = (query) => {
@@ -120,18 +137,16 @@ function App() {
 
     if (itemsOfSingleCategory.join() === selectedItemsOfCategory.join()) {
       // console.log(true);
-      setCategoriesChecked({ ...categoriesChecked, [category]: true });
+      setCheckedCategories({ ...checkedCategories, [category]: true });
     } else {
       // console.log(false);
-      setCategoriesChecked({ ...categoriesChecked, [category]: false });
+      setCheckedCategories({ ...checkedCategories, [category]: false });
     }
   };
 
-  // useEffect(() => {
-  //   if (form.applicable_items.length > 0) {
-  //     checkCategory();
-  //   }
-  // }, [form]);
+  useEffect(() => {
+    // checkCategory("Bracelets");
+  }, [form]);
 
   useEffect(() => {
     let arrOfCategories = [];
@@ -141,14 +156,6 @@ function App() {
       }
     }
     setCategories(arrOfCategories);
-
-    for (let i = 0; i < categories.length; i++) {
-      setCategoriesChecked({
-        ...categoriesChecked,
-        [categories[i]]: false,
-      });
-    }
-    console.log(arrOfCategories);
   }, [items]);
 
   useEffect(() => {
@@ -158,7 +165,6 @@ function App() {
   // console.log(items);
   // console.log(categories);
   // console.log(form);
-  console.log(categoriesChecked);
 
   return (
     <div className="app">
@@ -201,8 +207,8 @@ function App() {
                 <div id="checkbox-group" className="items__category">
                   <label className="items__category">
                     <Checkbox
-                      onChange={(e) => handleChange("category", e)}
-                      checked={categoriesChecked[category] || false}
+                      onChange={(e) => handleChangeCategory(e)}
+                      // checked={checkCategory(category)}
                       value={category}
                     />
                     {category}
@@ -220,14 +226,13 @@ function App() {
                         <Checkbox
                           type="checkbox"
                           name="applicable_items"
-                          value={item.id.toString() || " "}
+                          value={item.id.toString()}
                           checked={form.applicable_items.includes(
                             item.id.toString()
                           )}
-                          onChange={(e) => {
-                            handleChange("applicable_items", e);
-                            checkCategory(item.category);
-                          }}
+                          onChange={() =>
+                            handleChange("applicable_items", item)
+                          }
                         />
                         {item.name}
                       </label>
@@ -237,6 +242,7 @@ function App() {
             ))}
           </div>
           <Button
+            onClick={() => console.log(form)}
             variant="contained"
             disableElevation>{`Apply Tax To ${form.applicable_items.length} items `}</Button>
         </div>
