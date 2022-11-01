@@ -11,6 +11,7 @@ import {
   Divider,
   Checkbox,
   Button,
+  Alert,
 } from "@mui/material";
 
 function App() {
@@ -22,7 +23,8 @@ function App() {
     applied_to: "",
     applicable_items: [],
   });
-  const [checkedCategories, setCheckedCategories] = useState();
+  const [currentCategory, setCurrentCategory] = useState();
+  const [checkedCategory, setCheckedCategory] = useState(null);
 
   const getItems = () => {
     const arrOfItems = [];
@@ -44,24 +46,6 @@ function App() {
     setItems(arrOfItems);
   };
 
-  const handleChangeCategory = (e) => {
-    let itemsOfSingleCategory = [];
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].category === e.target.value) {
-        itemsOfSingleCategory.push(items[i]);
-      }
-    }
-
-    let itemsToAdd = [];
-    for (let i = 0; i < items.length; i++) {
-      if (!form.applicable_items.includes(itemsOfSingleCategory[i].id)) {
-        itemsToAdd.push(itemsOfSingleCategory[i].id.toString());
-      }
-    }
-    setForm({ ...form, applicable_items: [...itemsToAdd] });
-    console.log(itemsOfSingleCategory);
-  };
-
   const handleChange = (field, item) => {
     if (field === "applicable_items") {
       const arr = [...form.applicable_items];
@@ -70,18 +54,58 @@ function App() {
         arr.push(value);
         setForm({ ...form, applicable_items: arr });
       } else if (arr.includes(value)) {
-        const index = arr.indexOf(value);
-        arr.splice(index, 1);
-        setForm({ ...form, applicable_items: arr });
+        if (form.applied_to !== "all" || "") {
+          const index = arr.indexOf(value);
+          arr.splice(index, 1);
+          setForm({ ...form, applicable_items: arr });
+        } else {
+          alert("Check Applied To All");
+        }
       }
+      setCurrentCategory(item.category);
     }
 
-    // if (form.applicable_items.length !== items.length) {
-    //   let arrOfItems = [];
-    //   for (let i = 0; i < items.length; i++) {
-    //     arrOfItems.push(items[i].id);
-    //   }
-    // }
+    if (field === "category") {
+      let itemsOfSingleCategory = [];
+      if (!checkedCategory[item]) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].category === item) {
+            if (!form.applicable_items.includes(items[i].id.toString()))
+              itemsOfSingleCategory.push(items[i].id.toString());
+          }
+        }
+        setForm({
+          ...form,
+          applicable_items: [
+            ...form.applicable_items,
+            ...itemsOfSingleCategory,
+          ].sort(),
+        });
+        setCheckedCategory({
+          ...checkedCategory,
+          [item]: !checkedCategory[item],
+        });
+      } else {
+        if (form.applied_to !== "all" || "") {
+          let arrOfItems = [...form.applicable_items];
+          for (let i = 0; i < arrOfItems.length; i++) {
+            for (let j = 0; j < items.length; j++) {
+              if (arrOfItems[i] === items[j].id.toString()) {
+                arrOfItems.splice(i, 1);
+              }
+            }
+          }
+          setForm({
+            ...form,
+            applicable_items: [...arrOfItems],
+          });
+          setCheckedCategory({
+            ...checkedCategory,
+            [item]: !checkedCategory[item],
+          });
+        }
+      }
+    }
   };
 
   const handleFilter = (query) => {
@@ -108,6 +132,11 @@ function App() {
         applicable_items: [...arrOfItems],
         applied_to: "all",
       });
+      const obj = categories.reduce((accumulator, value) => {
+        return { ...accumulator, [value]: true };
+      }, {});
+
+      setCheckedCategory(obj);
     } else if (value == "some") {
       setForm({ ...form, applied_to: value });
     }
@@ -117,35 +146,44 @@ function App() {
     let itemsOfSingleCategory = [];
     for (let i = 0; i < items.length; i++) {
       if (items[i].category === category) {
-        itemsOfSingleCategory.push(items[i].id);
+        itemsOfSingleCategory.push(items[i].id.toString());
       }
     }
 
     let selectedItemsOfCategory = [];
     for (let i = 0; i < form.applicable_items.length; i++) {
       for (let j = 0; j < items.length; j++) {
-        if (form.applicable_items[i] == items[j].id) {
-          selectedItemsOfCategory.push(items[j].id);
+        if (
+          form.applicable_items[i] == items[j].id.toString() &&
+          items[j].category == category
+        ) {
+          selectedItemsOfCategory.push(items[j].id.toString());
         }
       }
     }
 
-    // console.log(category);
-    // // console.log(form.applicable_items);
-    // console.log(itemsOfSingleCategory);
-    // console.log(selectedItemsOfCategory);
-
-    if (itemsOfSingleCategory.join() === selectedItemsOfCategory.join()) {
-      // console.log(true);
-      setCheckedCategories({ ...checkedCategories, [category]: true });
+    if (
+      itemsOfSingleCategory.sort().join() ===
+      selectedItemsOfCategory.sort().join()
+    ) {
+      setCheckedCategory({ ...checkedCategory, [category]: true });
     } else {
-      // console.log(false);
-      setCheckedCategories({ ...checkedCategories, [category]: false });
+      setCheckedCategory({ ...checkedCategory, [category]: false });
     }
   };
 
   useEffect(() => {
-    // checkCategory("Bracelets");
+    const obj = categories.reduce((accumulator, value) => {
+      return { ...accumulator, [value]: false };
+    }, {});
+
+    setCheckedCategory(obj);
+  }, [categories]);
+
+  useEffect(() => {
+    if (currentCategory) {
+      checkCategory(currentCategory);
+    }
   }, [form]);
 
   useEffect(() => {
@@ -153,6 +191,7 @@ function App() {
     for (let i = 0; i < items.length; i++) {
       if (!arrOfCategories.includes(items[i].category)) {
         arrOfCategories.push(items[i].category);
+        setCheckedCategory({ ...checkedCategory, [items[i].category]: false });
       }
     }
     setCategories(arrOfCategories);
@@ -164,7 +203,8 @@ function App() {
 
   // console.log(items);
   // console.log(categories);
-  // console.log(form);
+  console.log(form);
+  // checkedCategory && console.log(checkedCategory);
 
   return (
     <div className="app">
@@ -202,44 +242,45 @@ function App() {
             size="small"
           />
           <div className="items">
-            {categories.map((category, i) => (
-              <div key={i}>
-                <div id="checkbox-group" className="items__category">
-                  <label className="items__category">
-                    <Checkbox
-                      onChange={(e) => handleChangeCategory(e)}
-                      // checked={checkCategory(category)}
-                      value={category}
-                    />
-                    {category}
-                  </label>
+            {checkedCategory &&
+              categories.map((category, i) => (
+                <div key={i}>
+                  <div id="checkbox-group" className="items__category">
+                    <label className="items__category">
+                      <Checkbox
+                        checked={checkedCategory[category] || false}
+                        // value={category}
+                        onChange={() => handleChange("category", category)}
+                      />
+                      {category}
+                    </label>
+                  </div>
+                  {items
+                    .filter((item) => item.category === category)
+                    .map((item, j) => (
+                      <div
+                        className="categorized__items"
+                        role="group"
+                        aria-labelledby="checkbox-group"
+                        key={j}>
+                        <label key={j}>
+                          <Checkbox
+                            type="checkbox"
+                            name="applicable_items"
+                            value={item.id.toString()}
+                            checked={form.applicable_items.includes(
+                              item.id.toString()
+                            )}
+                            onChange={() =>
+                              handleChange("applicable_items", item)
+                            }
+                          />
+                          {item.name}
+                        </label>
+                      </div>
+                    ))}
                 </div>
-                {items
-                  .filter((item) => item.category === category)
-                  .map((item, j) => (
-                    <div
-                      className="categorized__items"
-                      role="group"
-                      aria-labelledby="checkbox-group"
-                      key={j}>
-                      <label key={j}>
-                        <Checkbox
-                          type="checkbox"
-                          name="applicable_items"
-                          value={item.id.toString()}
-                          checked={form.applicable_items.includes(
-                            item.id.toString()
-                          )}
-                          onChange={() =>
-                            handleChange("applicable_items", item)
-                          }
-                        />
-                        {item.name}
-                      </label>
-                    </div>
-                  ))}
-              </div>
-            ))}
+              ))}
           </div>
           <Button
             onClick={() => console.log(form)}
