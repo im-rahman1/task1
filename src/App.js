@@ -90,7 +90,10 @@ function App() {
           let arrOfItems = [...form.applicable_items];
           for (let i = 0; i < arrOfItems.length; i++) {
             for (let j = 0; j < items.length; j++) {
-              if (arrOfItems[i] === items[j].id.toString()) {
+              if (
+                arrOfItems[i] === items[j].id.toString() &&
+                items[j].category === item
+              ) {
                 arrOfItems.splice(i, 1);
               }
             }
@@ -103,6 +106,8 @@ function App() {
             ...checkedCategory,
             [item]: !checkedCategory[item],
           });
+        } else {
+          alert("Check Applied To All");
         }
       }
     }
@@ -172,6 +177,14 @@ function App() {
     }
   };
 
+  const handleSubmit = () => {
+    if (form.name && form.rate && form.applicable_items) {
+      alert(JSON.stringify(form));
+    } else {
+      alert("Enter All Fields.");
+    }
+  };
+
   useEffect(() => {
     const obj = categories.reduce((accumulator, value) => {
       return { ...accumulator, [value]: false };
@@ -203,7 +216,7 @@ function App() {
 
   // console.log(items);
   // console.log(categories);
-  console.log(form);
+  // console.log(form);
   // checkedCategory && console.log(checkedCategory);
 
   return (
@@ -215,8 +228,19 @@ function App() {
         </div>
         <div className="form">
           <div className="form__txtFields">
-            <TextField placeholder="Enter Name" size="small" />
-            <TextField placeholder="Percentage" type="number" size="small" />
+            <TextField
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Enter Name"
+              size="small"
+            />
+            <TextField
+              value={form.rate}
+              onChange={(e) => setForm({ ...form, rate: e.target.value })}
+              placeholder="Percentage"
+              type="number"
+              size="small"
+            />
           </div>
           <RadioGroup
             aria-labelledby="demo-radio-buttons-group-label"
@@ -283,7 +307,7 @@ function App() {
               ))}
           </div>
           <Button
-            onClick={() => console.log(form)}
+            onClick={() => handleSubmit()}
             variant="contained"
             disableElevation>{`Apply Tax To ${form.applicable_items.length} items `}</Button>
         </div>
